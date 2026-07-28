@@ -217,8 +217,34 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           return {};
         }
 
-        // 3. GUARANTEED FALLBACK: Create user profile directly in Supabase DB profiles table
-        // This guarantees 100% of registrations succeed regardless of Supabase Auth rate limits (429)!
+        // 3. GUARANTEED FALLBACK: Check if profile already exists in DB by email to avoid 409 Conflict
+        const { data: existingDbProfile } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('email', cleanEmail)
+          .maybeSingle();
+
+        if (existingDbProfile) {
+          const fullUser: User = {
+            id: existingDbProfile.id,
+            name: existingDbProfile.name || cleanEmail.split('@')[0],
+            email: cleanEmail,
+            avatar: existingDbProfile.avatar || `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(cleanEmail)}`,
+            hasPurchased: isWellingtonAdmin ? true : !!existingDbProfile.has_purchased,
+            licenseKey: existingDbProfile.license_key || generateLicenseKeyStr(),
+            purchasedAt: existingDbProfile.purchased_at || undefined,
+            role: (existingDbProfile.role === 'admin' || isWellingtonAdmin) ? 'admin' : 'client',
+          };
+          setUser(fullUser);
+          localStorage.setItem('lovable_user_session', JSON.stringify(fullUser));
+          if (fullUser.role === 'admin') {
+            setCurrentPage('admin');
+          }
+          setIsAuthModalOpen(false);
+          return {};
+        }
+
+        // If profile doesn't exist in DB yet, create new profile
         const fallbackUserId = generateUUID();
         const displayName = name || cleanEmail.split('@')[0] || 'Cliente VIP';
         const userRole = isWellingtonAdmin ? 'admin' : 'client';
@@ -234,8 +260,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           role: userRole
         };
 
-        // Save in Supabase database
-        await supabase.from('profiles').upsert(fallbackProfile);
+        // Save in Supabase database with onConflict email handler
+        await supabase.from('profiles').upsert(fallbackProfile, { onConflict: 'email' });
 
         const fullUser: User = {
           id: fallbackUserId,
@@ -269,6 +295,33 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           return {};
         }
 
+        // Fallback: Check if user exists in database profiles table
+        const { data: existingDbProfile } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('email', cleanEmail)
+          .maybeSingle();
+
+        if (existingDbProfile) {
+          const fullUser: User = {
+            id: existingDbProfile.id,
+            name: existingDbProfile.name || cleanEmail.split('@')[0],
+            email: cleanEmail,
+            avatar: existingDbProfile.avatar || `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(cleanEmail)}`,
+            hasPurchased: isWellingtonAdmin ? true : !!existingDbProfile.has_purchased,
+            licenseKey: existingDbProfile.license_key || generateLicenseKeyStr(),
+            purchasedAt: existingDbProfile.purchased_at || undefined,
+            role: (existingDbProfile.role === 'admin' || isWellingtonAdmin) ? 'admin' : 'client',
+          };
+          setUser(fullUser);
+          localStorage.setItem('lovable_user_session', JSON.stringify(fullUser));
+          if (fullUser.role === 'admin') {
+            setCurrentPage('admin');
+          }
+          setIsAuthModalOpen(false);
+          return {};
+        }
+
         // Fallback login for admin user
         if (isWellingtonAdmin) {
           const adminUser: User = {
@@ -285,17 +338,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setCurrentPage('admin');
           setIsAuthModalOpen(false);
           return {};
-        }
-
-        // Fallback login for local session
-        const savedSession = localStorage.getItem('lovable_user_session');
-        if (savedSession) {
-          const parsed = JSON.parse(savedSession);
-          if (parsed.email === cleanEmail) {
-            setUser(parsed);
-            setIsAuthModalOpen(false);
-            return {};
-          }
         }
 
         return { error: 'E-mail ou senha incorretos.' };
