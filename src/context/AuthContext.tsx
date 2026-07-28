@@ -170,6 +170,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         });
 
         if (error) {
+          // If rate limit error occurs, attempt direct sign in in case user already exists
+          if (error.message.includes('rate limit') || error.message.includes('limit exceeded') || error.status === 429) {
+            const { data: signInData, error: signInErr } = await supabase.auth.signInWithPassword({
+              email: cleanEmail,
+              password: userPassword
+            });
+            if (!signInErr && signInData.user) {
+              await syncUserProfile(signInData.user);
+              setIsAuthModalOpen(false);
+              return {};
+            }
+            return { error: 'Limite de envios de e-mail excedido no Supabase. Se você já se cadastrou, clique em "Fazer Login" abaixo.' };
+          }
           return { error: error.message };
         }
 
