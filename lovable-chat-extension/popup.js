@@ -619,7 +619,9 @@ async function sendMessage() {
         let errorMessage = error.message;
         
         // Handle specific error cases
-        if (errorMessage.includes('403') || errorMessage.includes('Forbidden')) {
+        if (errorMessage.includes('Workspace out of credits') || errorMessage.includes('credits')) {
+            errorMessage = 'Créditos esgotados na sua conta do Lovable.dev! Para continuar gerando código, recarregue seus créditos ou troque de workspace no Lovable.dev.';
+        } else if (errorMessage.includes('403') || errorMessage.includes('Forbidden')) {
             errorMessage = 'Acesso negado. Verifique se você está logado no Lovable.dev e tente recarregar a página.';
         } else if (errorMessage.includes('401') || errorMessage.includes('Unauthorized')) {
             errorMessage = 'Sessão expirada. Faça login novamente no Lovable.dev.';
