@@ -37,26 +37,28 @@ export const Hero: React.FC = () => {
               </div>
 
               <div className="flex flex-col sm:flex-row items-center justify-between gap-6 text-left">
-                <div>
-                  <div className="flex items-baseline gap-2">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
                     <span className="text-gray-400 text-sm line-through">De R$ 49,90</span>
                     <span className="text-xs text-emerald-400 font-bold bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/30">
                       Economize 80%
                     </span>
                   </div>
 
-                  <div className="flex items-baseline gap-2 mt-1">
-                    <span className="text-3xl sm:text-5xl font-black text-white tracking-tight">R$ 10,00</span>
-                    <span className="text-xs text-[#FF6584] font-bold uppercase tracking-wider bg-[#FF3366]/20 px-2.5 py-1 rounded-md border border-[#FF3366]/40">
+                  <div className="flex flex-wrap items-center gap-3 pt-1">
+                    <span className="text-4xl sm:text-5xl font-black text-white tracking-tight whitespace-nowrap">
+                      R$ 10,00
+                    </span>
+                    <span className="text-xs text-[#FF6584] font-bold uppercase tracking-wider bg-[#FF3366]/20 px-3 py-1.5 rounded-xl border border-[#FF3366]/40 whitespace-nowrap">
                       Download + 100% Vitalício
                     </span>
                   </div>
 
-                  <div className="flex items-center gap-4 mt-3 text-xs text-gray-300">
-                    <span className="flex items-center gap-1">
+                  <div className="flex flex-wrap items-center gap-4 pt-2 text-xs text-gray-300">
+                    <span className="flex items-center gap-1.5 whitespace-nowrap">
                       <CheckCircle className="w-4 h-4 text-emerald-400" /> Acesso Vitalício
                     </span>
-                    <span className="flex items-center gap-1">
+                    <span className="flex items-center gap-1.5 whitespace-nowrap">
                       <CheckCircle className="w-4 h-4 text-emerald-400" /> Liberação Automática
                     </span>
                   </div>
