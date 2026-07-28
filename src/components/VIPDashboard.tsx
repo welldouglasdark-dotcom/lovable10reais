@@ -19,7 +19,7 @@ import {
   Database,
   ShieldAlert,
   Zap,
-  Smartphone
+  Coins
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { buildExtensionZip } from '../utils/extensionZipBuilder';
@@ -104,47 +104,26 @@ Rules: Follow 4-phase root cause analysis. Identify missing imports, prop mismat
       name: "Security Auditor Agent",
       icon: ShieldAlert,
       prompt: `🤖 ACT AS @security-auditor FOR LOVABLE.DEV:
-Goal: Perform OWASP 2025 vulnerability analysis.
-Rules: Check secret key exposure, XSS sanitization, CSRF protection, and secure header configurations.`
-    },
-    {
-      id: "mobile-developer",
-      name: "Mobile-First Specialist Agent",
-      icon: Smartphone,
-      prompt: `🤖 ACT AS @mobile-developer FOR LOVABLE.DEV:
-Goal: Enforce 100% mobile responsiveness and touch usability.
-Rules: Responsive flex/grid collapses, min 44px tap targets, mobile drawer menus, stacked mobile tables.`
+Goal: Audit fullstack web application code for security vulnerabilities.
+Rules: Prevent SQL injection, XSS, CSRF, broken authentication, and exposed secrets.`
     }
   ];
 
   const promptsList = [
     {
-      title: "🚀 Prompt SaaS Dashboard Lovable Style",
-      desc: "Gera um painel administrativo com o visual escuro característico do Lovable.dev, metric cards e Recharts.",
-      prompt: `[LOVABLE PRO HIGH-FIDELITY SAAS DASHBOARD]
-Design Style: Lovable Dark Mode (#08090B background, #FF3366 pink accents, glassmorphism cards).
-Typography: Plus Jakarta Sans / Inter.
-Components:
-- Sidebar colapsável com ícones Lucide (Dashboard, Analytics, Usuários, Configurações)
-- Header com barra de busca global, notificações com indicador pulse e avatar do usuário
-- Grid de 4 metric cards: Receita Total (R$ 148k), Assinantes (2.4k), Conversão (4.8%), Churn Rate (0.8%)
-- Gráfico de Área Recharts com gradiente rosa/violeta (#FF3366 -> #8B5CF6) e tooltip interativo
-- Tabela de Transações Recentes com busca, ordenação, badges de status (Pago, Pendente) e paginação
-- Estrutura modular limpa em TypeScript.`
+      title: "🚀 Landing Page de Alta Conversão (SaaS / App)",
+      desc: "Prompt mestre para gerar landing pages completas com dark mode, prova social e checkout.",
+      prompt: "Crie uma landing page moderna em React com Tailwind CSS em Dark Mode (#08090B). Inclua hero section animado com botões de CTA, grade de recursos com ícones Lucide, depoimentos de clientes, tabela de preços por R$ 10,00 e FAQ interativo em accordion. Certifique-se de que a estrutura seja 100% responsiva para dispositivos móveis."
     },
     {
-      title: "⚡ Prompt Landing Page Ultra-Atraente Lovable",
-      desc: "Instrui a IA do Lovable a criar uma landing page com visual rosa/violeta neon, hero com badges e FAQ.",
-      prompt: `[LOVABLE PRO LANDING PAGE MASTER]
-Goal: Criar landing page SaaS de alta conversão.
-Estilo: Dark mode Lovable (#08090B, acentos rosa #FF3366, bordas de vidro 1px).
-Seções:
-1. Header: Logo com gradiente, links de navegação suave e botão "Começar Agora"
-2. Hero: Badge "⚡ Novidade v2.0", Título gigante com palavra em destaque gradiente, Subtítulo persuasivo, Botão CTA principal com hover glow rosa, Mockup da plataforma em card de vidro
-3. Prova Social: Ticker de clientes e contador "+10.000 devs utilizam"
-4. Grid de 6 Recursos com cards hover 3D e ícones coloridos Lucide
-5. Seção de Preços: 2 planos (Mensal e Vitalício com badge "Mais Popular")
-6. FAQ com acordeão interativo.`
+      title: "🔐 Autenticação Supabase Completa (E-mail & OAuth)",
+      desc: "Prompt para criar fluxo de login e cadastro integrado ao banco de dados Supabase.",
+      prompt: "Crie um componente de Autenticação em React utilizando @supabase/supabase-js. Implemente formulário modal com login por e-mail/senha, cadastro de novo usuário, login social com Google OAuth e tratamento de erros amigável em português com notificações de alerta."
+    },
+    {
+      title: "👑 Painel Dashboard Admin Responsivo",
+      desc: "Prompt para criar dashboard administrativo completo com métricas e gestão de usuários.",
+      prompt: "Desenvolva um Painel de Administração em React e TypeScript. Inclua cartões estatísticos de faturamento total, quantidade de vendas e clientes ativos. Adicione tabela responsiva de transações e busca dinâmica de usuários com botões de ação com 1 clique."
     }
   ];
 
@@ -231,7 +210,7 @@ Seções:
                 Área do Cliente • <span className="text-gradient-lovable">Lovable Pro Extension</span>
               </h1>
               <p className="text-xs sm:text-sm text-gray-300 max-w-2xl">
-                Parabéns, {user?.name || 'Cliente'}! Seu acesso foi liberado. Baixe o arquivo da extensão (.zip) abaixo, acesse o Hub de 20 Agentes e siga o tutorial de instalação.
+                Parabéns, {user?.name || 'Cliente'}! Seu acesso foi liberado. Baixe o arquivo da extensão (.zip) abaixo, ative o Modo Desenvolvedor e siga as orientações de créditos do Lovable.dev.
               </p>
             </div>
 
@@ -289,7 +268,7 @@ Seções:
             }`}
           >
             <Play className="w-4 h-4 text-emerald-400" />
-            <span>3. Vídeo Tutorial & Hacks</span>
+            <span>3. Vídeo Tutorial & Hacks de Crédito</span>
           </button>
 
           <button
@@ -321,7 +300,7 @@ Seções:
         {activeTab === 'download' && (
           <div className="space-y-8">
             {/* Big Download Box */}
-            <div className="p-8 rounded-3xl bg-[#121318]/90 border border-[#FF3366]/40 glass-card text-center space-y-4">
+            <div className="p-8 rounded-3xl bg-[#121318]/90 border border-[#FF3366]/40 glass-card text-center space-y-4 shadow-2xl">
               <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#FF3366] via-[#FF007F] to-violet-600 p-[1px] mx-auto shadow-xl shadow-[#FF3366]/30">
                 <div className="w-full h-full bg-[#08090B] rounded-[15px] flex items-center justify-center">
                   <Download className="w-8 h-8 text-[#FF3366]" />
@@ -333,7 +312,7 @@ Seções:
               </h2>
 
               <p className="text-sm text-gray-300 max-w-xl mx-auto">
-                Clique no botão abaixo para baixar o arquivo compactado <code className="text-[#FF6584] font-bold">.ZIP</code> da extensão contendo os 20 Agentes IA (.agent), manifest V3, content scripts e popup para o navegador:
+                Clique no botão abaixo para baixar o arquivo compactado <code className="text-[#FF6584] font-bold">.ZIP</code> contendo os 20 Agentes IA, manifest V3 e assistente de chat para navegar no Lovable.dev:
               </p>
 
               <button
@@ -350,7 +329,7 @@ Seções:
                 <span>•</span>
                 <span>Tamanho: 2.4 MB</span>
                 <span>•</span>
-                <span>Compatível com Chrome, Edge, Brave, Opera</span>
+                <span>Compatível com Chrome, Edge, Brave</span>
               </div>
             </div>
 
@@ -359,16 +338,16 @@ Seções:
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div>
                   <h3 className="text-xl font-bold text-white flex items-center gap-2">
-                    <Monitor className="w-5 h-5 text-[#FF3366]" /> Tutorial de Instalação no Navegador (Passo a Passo)
+                    <Monitor className="w-5 h-5 text-[#FF3366]" /> Tutorial de Instalação no Navegador (Modo Desenvolvedor)
                   </h3>
-                  <p className="text-xs text-gray-400">Selecione seu navegador abaixo para ver o endereço exato e os passos de instalação:</p>
+                  <p className="text-xs text-gray-400">Selecione seu navegador abaixo para ver o endereço exato e os passos para adicionar a extensão:</p>
                 </div>
 
                 {/* Browser Selector */}
                 <div className="flex items-center gap-2 bg-[#08090B] p-1 rounded-xl border border-white/10">
                   <button
                     onClick={() => setBrowserTab('chrome')}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                       browserTab === 'chrome' ? 'bg-[#FF3366] text-white' : 'text-gray-400 hover:text-white'
                     }`}
                   >
@@ -376,7 +355,7 @@ Seções:
                   </button>
                   <button
                     onClick={() => setBrowserTab('edge')}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                       browserTab === 'edge' ? 'bg-[#FF3366] text-white' : 'text-gray-400 hover:text-white'
                     }`}
                   >
@@ -384,7 +363,7 @@ Seções:
                   </button>
                   <button
                     onClick={() => setBrowserTab('brave')}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                       browserTab === 'brave' ? 'bg-[#FF3366] text-white' : 'text-gray-400 hover:text-white'
                     }`}
                   >
@@ -393,15 +372,15 @@ Seções:
                 </div>
               </div>
 
-              {/* Step Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {/* 4 Step Cards */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
                 <div className="p-5 rounded-2xl bg-[#08090B]/80 border border-white/10 space-y-3">
                   <div className="w-8 h-8 rounded-lg bg-[#FF3366] text-white font-bold text-sm flex items-center justify-center">
                     1
                   </div>
-                  <h4 className="text-sm font-bold text-white">1. Extraia a Pasta do .ZIP</h4>
-                  <p className="text-xs text-gray-400">
-                    Após baixar o arquivo <code className="text-[#FF6584]">Lovable-Pro-Extension-v2.4.zip</code>, clique com o botão direito nele e escolha <strong>"Extrair Tudo"</strong> para uma pasta fácil no seu computador.
+                  <h4 className="text-sm font-bold text-white">1. Baixe e Extraia o .ZIP</h4>
+                  <p className="text-xs text-gray-400 leading-relaxed">
+                    Baixe o arquivo <code className="text-[#FF6584]">Lovable-Pro-Extension-v2.4.zip</code> acima, clique com o botão direito e escolha <strong>"Extrair Tudo"</strong> para uma pasta no seu PC.
                   </p>
                 </div>
 
@@ -409,9 +388,9 @@ Seções:
                   <div className="w-8 h-8 rounded-lg bg-[#FF3366] text-white font-bold text-sm flex items-center justify-center">
                     2
                   </div>
-                  <h4 className="text-sm font-bold text-white">2. Abra a Página de Extensões</h4>
-                  <p className="text-xs text-gray-400">
-                    No seu navegador ({browserTab}), abra uma nova aba e digite na barra de endereço:
+                  <h4 className="text-sm font-bold text-white">2. Abra as Extensões</h4>
+                  <p className="text-xs text-gray-400 leading-relaxed">
+                    No seu navegador ({browserTab}), abra uma nova aba e cole este endereço:
                   </p>
                   <code className="block p-2 bg-[#121318] text-emerald-400 text-xs font-mono rounded border border-white/10">
                     {browserTab === 'chrome' && 'chrome://extensions'}
@@ -424,18 +403,32 @@ Seções:
                   <div className="w-8 h-8 rounded-lg bg-[#FF3366] text-white font-bold text-sm flex items-center justify-center">
                     3
                   </div>
-                  <h4 className="text-sm font-bold text-white">3. Ative o Modo Dev & Carregue</h4>
-                  <p className="text-xs text-gray-400">
-                    No canto superior direito da tela de extensões, ative a opção <strong>"Modo do desenvolvedor"</strong> (Developer Mode). Depois clique no botão <strong>"Carregar sem compactação"</strong> (Load Unpacked) e selecione a pasta extraída.
+                  <h4 className="text-sm font-bold text-white">3. Modo Desenvolvedor</h4>
+                  <p className="text-xs text-gray-400 leading-relaxed">
+                    No canto superior direito, ative a chave <strong>"Modo do desenvolvedor"</strong> (Developer Mode). Em seguida, clique em <strong>"Carregar sem compactação"</strong> (Load Unpacked).
+                  </p>
+                </div>
+
+                <div className="p-5 rounded-2xl bg-[#08090B]/80 border border-white/10 space-y-3">
+                  <div className="w-8 h-8 rounded-lg bg-[#FF3366] text-white font-bold text-sm flex items-center justify-center">
+                    4
+                  </div>
+                  <h4 className="text-sm font-bold text-white">4. Selecione a Pasta</h4>
+                  <p className="text-xs text-gray-400 leading-relaxed">
+                    Selecione a pasta descompactada da extensão. O ícone do <strong>Lovable PRO</strong> aparecerá na barra do navegador!
                   </p>
                 </div>
               </div>
 
-              <div className="p-4 rounded-2xl bg-[#FF3366]/10 border border-[#FF3366]/30 flex items-center gap-3">
-                <CheckCircle2 className="w-5 h-5 text-[#FF6584] shrink-0" />
-                <span className="text-xs text-gray-300">
-                  <strong>Pronto!</strong> Ao abrir o site <strong>https://lovable.dev</strong>, a barra flutuante da extensão Lovable Pro aparecerá automaticamente no rodapé do navegador.
-                </span>
+              {/* Requirement Box for Lovable.dev Credits */}
+              <div className="p-5 rounded-2xl bg-amber-500/10 border border-amber-500/30 space-y-2">
+                <div className="flex items-center gap-2 text-amber-400 font-extrabold text-sm">
+                  <Coins className="w-4 h-4" />
+                  <span>Aviso Importante sobre Créditos do Lovable.dev</span>
+                </div>
+                <p className="text-xs text-gray-300 leading-relaxed">
+                  A extensão envia e recebe instruções através da API oficial do <strong>Lovable.dev</strong>. Para que ela gere códigos e processe mensagens sem interrupções, <strong>é necessário ter créditos ativos na sua conta/workspace do Lovable.dev</strong> (seja os créditos gratuitos de boas-vindas ou recarga no site). A taxa de R$ 10,00 garante sua licença vitalícia da extensão!
+                </p>
               </div>
             </div>
           </div>
@@ -502,10 +495,10 @@ Seções:
           <div className="space-y-6">
             <div className="text-left space-y-2 mb-6">
               <h2 className="text-2xl font-black text-white">
-                Vídeo Tutorial & Hacks de Produtividade no Lovable.dev
+                Vídeo Tutorial & Gestão de Créditos no Lovable.dev
               </h2>
               <p className="text-xs text-gray-400">
-                Aprenda a extrair o máximo poder do Lovable.dev utilizando os atalhos e utilitários da sua extensão.
+                Aprenda a extrair o máximo poder do Lovable.dev utilizando os atalhos da extensão e gerenciando seus créditos sem estourar limites.
               </p>
             </div>
 
@@ -513,30 +506,30 @@ Seções:
               <div className="p-6 rounded-2xl bg-[#121318]/80 border border-white/10 glass-card space-y-4">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-bold text-[#FF6584] bg-[#FF3366]/10 px-3 py-1 rounded-full border border-[#FF3366]/30">
-                    Módulo 1 • Instalação Completa
+                    Módulo 1 • Instalação & Modo Desenvolvedor
                   </span>
                   <Play className="w-4 h-4 text-emerald-400" />
                 </div>
                 <h3 className="text-lg font-bold text-white">
-                  🎥 Passo a Passo em Vídeo: Do Download ao Primeiro Uso no Lovable.dev
+                  🎥 Passo a Passo: Ativando o Modo Desenvolvedor no Navegador
                 </h3>
                 <p className="text-xs text-gray-300 leading-relaxed">
-                  Acompanhe na prática como extrair os arquivos da extensão, importar no Chrome/Edge e usar os botões do Super Enhancer dentro do Lovable.
+                  Veja como ativar o "Modo do desenvolvedor" no Chrome, Edge ou Brave, carregar a pasta extraída sem compactação e fixar a extensão na sua barra superior.
                 </p>
               </div>
 
               <div className="p-6 rounded-2xl bg-[#121318]/80 border border-white/10 glass-card space-y-4">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-bold text-cyan-400 bg-cyan-500/10 px-3 py-1 rounded-full border border-cyan-500/30">
-                    Módulo 2 • Redução de Tokens
+                    Módulo 2 • Economia de Créditos
                   </span>
-                  <Play className="w-4 h-4 text-emerald-400" />
+                  <Coins className="w-4 h-4 text-amber-400" />
                 </div>
                 <h3 className="text-lg font-bold text-white">
-                  ⚡ Como Criar Projetos 3x Maiores sem Estourar Limites de Tokens
+                  ⚡ Como Garantir Créditos Ativos no Lovable.dev
                 </h3>
                 <p className="text-xs text-gray-300 leading-relaxed">
-                  Dicas avançadas de como usar a extensão para limpar redundâncias e economizar até 60% dos seus créditos de IA no Lovable.
+                  Dicas avançadas de como verificar seu saldo de créditos no Lovable.dev, usar prompts otimizados para evitar gerações duplicadas e economizar até 60% de contexto.
                 </p>
               </div>
             </div>
