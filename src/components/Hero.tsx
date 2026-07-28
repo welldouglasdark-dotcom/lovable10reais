@@ -26,7 +26,7 @@ export const Hero: React.FC = () => {
 
           {/* Subtitle */}
           <p className="text-lg sm:text-xl text-gray-300 font-normal leading-relaxed max-w-3xl mx-auto">
-            Compre hoje, faça o download imediato do arquivo da extensão e tenha acesso ilimitado ao tutorial em vídeo mostrando como instalar no seu navegador.
+            Compre hoje, faça o download imediato do arquivo da extensão com <strong className="text-[#FF6584]">Economia 100% Vitalícia de Tokens</strong> e assista ao tutorial completo de instalação no seu navegador.
           </p>
 
           {/* R$ 10,00 Offer & CTA Card */}
@@ -48,7 +48,7 @@ export const Hero: React.FC = () => {
                   <div className="flex items-baseline gap-2 mt-1">
                     <span className="text-3xl sm:text-5xl font-black text-white tracking-tight">R$ 10,00</span>
                     <span className="text-xs text-[#FF6584] font-bold uppercase tracking-wider bg-[#FF3366]/20 px-2.5 py-1 rounded-md border border-[#FF3366]/40">
-                      Download + Tutorial Incluído
+                      Download + 100% Vitalício
                     </span>
                   </div>
 
