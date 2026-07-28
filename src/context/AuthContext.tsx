@@ -162,8 +162,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   useEffect(() => {
-    // Check if returning from OAuth redirect with token/code
-    const checkOAuthSession = async () => {
+    const initAuth = async () => {
+      // 1. Handle OAuth PKCE flow (URL contains ?code=...)
+      const searchParams = new URLSearchParams(window.location.search);
+      const code = searchParams.get('code');
+
+      if (code) {
+        try {
+          const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+          if (!error && data.session?.user) {
+            await syncUserProfile(data.session.user);
+            window.history.replaceState({}, document.title, window.location.pathname);
+            setIsLoading(false);
+            return;
+          }
+        } catch (err) {
+          console.warn('OAuth PKCE code exchange:', err);
+        }
+      }
+
+      // 2. Handle hash-based token flow or existing active session
       try {
         const { data: { session } } = await supabase.auth.getSession();
         if (session?.user) {
@@ -172,29 +190,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           return;
         }
       } catch (e) {
-        console.warn('OAuth session check:', e);
+        console.warn('OAuth getSession:', e);
       }
+
+      // 3. Fallback to saved local session
+      const savedSession = localStorage.getItem('lovable_user_session');
+      if (savedSession) {
+        try {
+          const parsed = JSON.parse(savedSession);
+          if (parsed?.id) {
+            setUser(parsed);
+            if (parsed.role === 'admin') {
+              setCurrentPage('admin');
+            } else if (parsed.hasPurchased) {
+              setCurrentPage('vip');
+            }
+          }
+        } catch (e) {
+          // Ignore
+        }
+      }
+      setIsLoading(false);
     };
 
-    // Restore local session first for instant responsiveness
-    const savedSession = localStorage.getItem('lovable_user_session');
-    if (savedSession) {
-      try {
-        const parsed = JSON.parse(savedSession);
-        if (parsed?.id) {
-          setUser(parsed);
-          if (parsed.role === 'admin') {
-            setCurrentPage('admin');
-          } else if (parsed.hasPurchased) {
-            setCurrentPage('vip');
-          }
-        }
-      } catch (e) {
-        // Ignore
-      }
-    }
-
-    checkOAuthSession();
+    initAuth();
 
     const { data: authListener } = supabase.auth.onAuthStateChange(async (_event, session) => {
       if (session?.user) {
