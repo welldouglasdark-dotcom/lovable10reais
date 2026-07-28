@@ -61,20 +61,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Sync user profile from Supabase including role
   const syncUserProfile = async (sbUser: SupabaseUser) => {
     try {
-      const isWellingtonAdmin = sbUser.email?.toLowerCase().includes('wellington') || sbUser.email?.toLowerCase().includes('welldouglasbox');
+      const userEmail = sbUser.email?.toLowerCase() || '';
+      const isWellingtonAdmin = userEmail.includes('wellington') || userEmail.includes('welldouglasbox');
 
+      // 1. Check if profile already exists in DB by email or ID
       const { data: profile } = await supabase
         .from('profiles')
         .select('*')
-        .eq('id', sbUser.id)
-        .single();
+        .eq('email', userEmail)
+        .maybeSingle();
 
       if (profile) {
         const fullUser: User = {
           id: profile.id,
-          name: profile.name || sbUser.user_metadata?.name || sbUser.email?.split('@')[0] || 'Dev Master',
-          email: profile.email || sbUser.email || '',
-          avatar: profile.avatar || `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(profile.name || 'Dev')}`,
+          name: profile.name || sbUser.user_metadata?.full_name || sbUser.user_metadata?.name || userEmail.split('@')[0],
+          email: userEmail,
+          avatar: profile.avatar || sbUser.user_metadata?.avatar_url || `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(userEmail)}`,
           hasPurchased: isWellingtonAdmin ? true : !!profile.has_purchased,
           licenseKey: profile.license_key || generateLicenseKeyStr(),
           purchasedAt: profile.purchased_at || undefined,
@@ -85,40 +87,43 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         if (fullUser.role === 'admin') {
           setCurrentPage('admin');
+        } else if (fullUser.hasPurchased) {
+          setCurrentPage('vip');
         }
 
         return fullUser;
       }
 
-      // If profile doesn't exist yet
+      // 2. If profile doesn't exist yet, create it
       const newLicenseKey = generateLicenseKeyStr();
-      const displayName = sbUser.user_metadata?.name || sbUser.email?.split('@')[0] || 'Dev Master';
+      const displayName = sbUser.user_metadata?.full_name || sbUser.user_metadata?.name || userEmail.split('@')[0] || 'Dev Master';
       const userRole = isWellingtonAdmin ? 'admin' : 'client';
+      const userAvatar = sbUser.user_metadata?.avatar_url || `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(displayName)}`;
 
       const newProfile = {
         id: sbUser.id,
         name: displayName,
-        email: sbUser.email || '',
-        avatar: `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(displayName)}`,
+        email: userEmail,
+        avatar: userAvatar,
         has_purchased: isWellingtonAdmin,
         license_key: newLicenseKey,
         role: userRole
       };
 
-      const { data: createdProfile } = await supabase
-        .from('profiles')
-        .upsert(newProfile)
-        .select()
-        .single();
+      try {
+        await supabase.from('profiles').insert(newProfile);
+      } catch (err) {
+        console.warn('Profile sync insert:', err);
+      }
 
       const fullUser: User = {
         id: sbUser.id,
         name: displayName,
-        email: sbUser.email || '',
-        avatar: createdProfile?.avatar || newProfile.avatar,
-        hasPurchased: isWellingtonAdmin || false,
-        licenseKey: createdProfile?.license_key || newLicenseKey,
-        role: (createdProfile?.role as 'client' | 'admin') || userRole,
+        email: userEmail,
+        avatar: userAvatar,
+        hasPurchased: isWellingtonAdmin,
+        licenseKey: newLicenseKey,
+        role: userRole,
       };
 
       setUser(fullUser);
@@ -126,22 +131,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (fullUser.role === 'admin') {
         setCurrentPage('admin');
+      } else if (fullUser.hasPurchased) {
+        setCurrentPage('vip');
       }
+
       return fullUser;
     } catch (e) {
       console.error('Error syncing Supabase user profile:', e);
       const isWellingtonAdmin = sbUser.email?.toLowerCase().includes('wellington') || sbUser.email?.toLowerCase().includes('welldouglasbox');
       const fallbackUser: User = {
         id: sbUser.id,
-        name: sbUser.user_metadata?.name || sbUser.email?.split('@')[0] || 'Dev Master',
+        name: sbUser.user_metadata?.full_name || sbUser.user_metadata?.name || sbUser.email?.split('@')[0] || 'Dev Master',
         email: sbUser.email || '',
-        avatar: `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(sbUser.email || 'Dev')}`,
+        avatar: sbUser.user_metadata?.avatar_url || `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(sbUser.email || 'Dev')}`,
         hasPurchased: isWellingtonAdmin || false,
         licenseKey: generateLicenseKeyStr(),
         role: isWellingtonAdmin ? 'admin' : 'client',
       };
       setUser(fallbackUser);
       localStorage.setItem('lovable_user_session', JSON.stringify(fallbackUser));
+
+      if (fallbackUser.role === 'admin') {
+        setCurrentPage('admin');
+      } else if (fallbackUser.hasPurchased) {
+        setCurrentPage('vip');
+      }
+
       return fallbackUser;
     }
   };
