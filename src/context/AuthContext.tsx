@@ -11,6 +11,7 @@ export interface User {
   hasPurchased: boolean;
   licenseKey: string;
   purchasedAt?: string;
+  role?: 'client' | 'admin';
 }
 
 interface AuthContextType {
@@ -18,7 +19,7 @@ interface AuthContextType {
   isLoading: boolean;
   isAuthModalOpen: boolean;
   isCheckoutModalOpen: boolean;
-  currentPage: 'landing' | 'vip';
+  currentPage: 'landing' | 'vip' | 'admin';
   login: (email: string, password?: string, name?: string, isRegister?: boolean) => Promise<{ error?: string }>;
   loginWithGoogle: () => Promise<void>;
   logout: () => Promise<void>;
@@ -27,7 +28,7 @@ interface AuthContextType {
   closeAuthModal: () => void;
   openCheckoutModal: () => void;
   closeCheckoutModal: () => void;
-  setCurrentPage: (page: 'landing' | 'vip') => void;
+  setCurrentPage: (page: 'landing' | 'vip' | 'admin') => void;
   generateNewLicenseKey: () => Promise<string>;
 }
 
@@ -44,19 +45,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isCheckoutModalOpen, setIsCheckoutModalOpen] = useState(false);
-  const [currentPage, setCurrentPage] = useState<'landing' | 'vip'>('landing');
+  const [currentPage, setCurrentPage] = useState<'landing' | 'vip' | 'admin'>('landing');
 
-  // Load and sync user profile from Supabase
+  // Sync user profile from Supabase including role
   const syncUserProfile = async (sbUser: SupabaseUser) => {
     try {
-      // 1. Fetch profile from Supabase 'profiles'
-      const { data: profile, error } = await supabase
+      const { data: profile } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', sbUser.id)
         .single();
 
-      if (profile && !error) {
+      if (profile) {
         const fullUser: User = {
           id: profile.id,
           name: profile.name || sbUser.user_metadata?.name || sbUser.email?.split('@')[0] || 'Dev Master',
@@ -65,21 +65,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           hasPurchased: !!profile.has_purchased,
           licenseKey: profile.license_key || generateLicenseKeyStr(),
           purchasedAt: profile.purchased_at || undefined,
+          role: profile.role === 'admin' ? 'admin' : 'client',
         };
         setUser(fullUser);
+
+        // If user is admin, default to admin dashboard page
+        if (profile.role === 'admin') {
+          setCurrentPage('admin');
+        }
+
         return fullUser;
       }
 
-      // 2. If profile doesn't exist yet, insert it
+      // If profile doesn't exist yet
       const newLicenseKey = generateLicenseKeyStr();
       const displayName = sbUser.user_metadata?.name || sbUser.email?.split('@')[0] || 'Dev Master';
+      const isWellingtonAdmin = sbUser.email?.toLowerCase().includes('wellington');
+      const userRole = isWellingtonAdmin ? 'admin' : 'client';
+
       const newProfile = {
         id: sbUser.id,
         name: displayName,
         email: sbUser.email || '',
         avatar: `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(displayName)}`,
-        has_purchased: false,
+        has_purchased: isWellingtonAdmin,
         license_key: newLicenseKey,
+        role: userRole
       };
 
       const { data: createdProfile } = await supabase
@@ -93,22 +104,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         name: displayName,
         email: sbUser.email || '',
         avatar: createdProfile?.avatar || newProfile.avatar,
-        hasPurchased: false,
+        hasPurchased: isWellingtonAdmin || false,
         licenseKey: createdProfile?.license_key || newLicenseKey,
+        role: (createdProfile?.role as 'client' | 'admin') || userRole,
       };
 
       setUser(fullUser);
+      if (fullUser.role === 'admin') {
+        setCurrentPage('admin');
+      }
       return fullUser;
     } catch (e) {
       console.error('Error syncing Supabase user profile:', e);
-      // Fallback local user
+      const isWellingtonAdmin = sbUser.email?.toLowerCase().includes('wellington');
       const fallbackUser: User = {
         id: sbUser.id,
         name: sbUser.user_metadata?.name || sbUser.email?.split('@')[0] || 'Dev Master',
         email: sbUser.email || '',
         avatar: `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(sbUser.email || 'Dev')}`,
-        hasPurchased: false,
+        hasPurchased: isWellingtonAdmin || false,
         licenseKey: generateLicenseKeyStr(),
+        role: isWellingtonAdmin ? 'admin' : 'client',
       };
       setUser(fallbackUser);
       return fallbackUser;
@@ -116,7 +132,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   useEffect(() => {
-    // Listen for Supabase Auth state changes
     const { data: authListener } = supabase.auth.onAuthStateChange(async (_event, session) => {
       if (session?.user) {
         await syncUserProfile(session.user);
@@ -126,7 +141,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setIsLoading(false);
     });
 
-    // Check active session on mount
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (session?.user) {
         await syncUserProfile(session.user);
@@ -205,7 +219,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     let currentUserId = user?.id;
 
     if (!user) {
-      // Create guest session in Supabase if purchasing without pre-login
       const guestEmail = `guest_${Date.now()}@lovablepro.com`;
       const { data: authData } = await supabase.auth.signUp({
         email: guestEmail,
@@ -218,7 +231,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     if (currentUserId) {
-      // Update profile in Supabase database
       await supabase.from('profiles').upsert({
         id: currentUserId,
         email: user?.email || `vip_${Date.now()}@lovablepro.com`,
@@ -227,7 +239,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         purchased_at: formattedDate,
       });
 
-      // Save order in Supabase
       await supabase.from('orders').insert({
         user_id: currentUserId,
         amount: 10.00,
@@ -247,7 +258,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsCheckoutModalOpen(false);
     setCurrentPage('vip');
 
-    // Trigger celebration confetti
     try {
       confetti({
         particleCount: 120,
@@ -256,7 +266,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         colors: ['#8B5CF6', '#06B6D4', '#10B981', '#F59E0B']
       });
     } catch (e) {
-      // Ignore if confetti fails
+      // Ignore
     }
   };
 

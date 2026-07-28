@@ -11,6 +11,7 @@ import { Footer } from './components/Footer';
 import { AuthModal } from './components/AuthModal';
 import { CheckoutModal } from './components/CheckoutModal';
 import { VIPDashboard } from './components/VIPDashboard';
+import { AdminDashboard } from './components/AdminDashboard';
 import { LivePurchaseToast } from './components/LivePurchaseToast';
 
 const MainContent: React.FC = () => {
@@ -30,6 +31,8 @@ const MainContent: React.FC = () => {
             <Testimonials />
             <FAQSection />
           </>
+        ) : currentPage === 'admin' ? (
+          <AdminDashboard />
         ) : (
           <VIPDashboard />
         )}

@@ -100,6 +100,20 @@ export const Navbar: React.FC = () => {
         <div className="hidden md:flex items-center gap-3">
           {user ? (
             <div className="flex items-center gap-3">
+              {user.role === 'admin' && (
+                <button
+                  onClick={() => setCurrentPage('admin')}
+                  className={`flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold rounded-xl transition-all cursor-pointer ${
+                    currentPage === 'admin'
+                      ? 'bg-gradient-to-r from-violet-600 to-[#FF3366] text-white shadow-lg shadow-violet-600/30 border border-violet-400/50'
+                      : 'bg-violet-500/20 border border-violet-500/40 text-violet-300 hover:bg-violet-500/30'
+                  }`}
+                >
+                  <Award className="w-4 h-4 text-violet-400" />
+                  <span>Painel Admin</span>
+                </button>
+              )}
+
               {user.hasPurchased ? (
                 <button
                   onClick={() => setCurrentPage('vip')}
