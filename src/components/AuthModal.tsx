@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Mail, Lock, User as UserIcon, ArrowRight } from 'lucide-react';
+import { X, Mail, Lock, User as UserIcon, ArrowRight, AlertCircle, Loader2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 export const AuthModal: React.FC = () => {
@@ -8,13 +8,27 @@ export const AuthModal: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   if (!isAuthModalOpen) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email) return;
-    login(email, name);
+    setErrorMsg(null);
+    setIsSubmitting(true);
+
+    try {
+      const res = await login(email, password, name, isRegister);
+      if (res?.error) {
+        setErrorMsg(res.error);
+      }
+    } catch (err: any) {
+      setErrorMsg(err.message || 'Ocorreu um erro ao processar.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -42,6 +56,14 @@ export const AuthModal: React.FC = () => {
               : 'Entre com seus dados cadastrados para acessar sua extensão'}
           </p>
         </div>
+
+        {/* Error Alert */}
+        {errorMsg && (
+          <div className="mb-4 p-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-xs flex items-start gap-2">
+            <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+            <span>{errorMsg}</span>
+          </div>
+        )}
 
         {/* Google OAuth Option */}
         <button
@@ -127,10 +149,17 @@ export const AuthModal: React.FC = () => {
 
           <button
             type="submit"
-            className="w-full py-3 bg-gradient-to-r from-[#FF3366] via-[#E11D48] to-violet-600 hover:from-[#FF2A5C] hover:to-violet-500 text-white font-extrabold text-sm rounded-xl shadow-lg shadow-[#FF3366]/30 transition-all flex items-center justify-center gap-2 cursor-pointer mt-2"
+            disabled={isSubmitting}
+            className="w-full py-3 bg-gradient-to-r from-[#FF3366] via-[#E11D48] to-violet-600 hover:from-[#FF2A5C] hover:to-violet-500 text-white font-extrabold text-sm rounded-xl shadow-lg shadow-[#FF3366]/30 transition-all flex items-center justify-center gap-2 cursor-pointer mt-2 disabled:opacity-50"
           >
-            <span>{isRegister ? 'Criar Conta' : 'Entrar na Conta'}</span>
-            <ArrowRight className="w-4 h-4" />
+            {isSubmitting ? (
+              <Loader2 className="w-4 h-4 animate-spin text-white" />
+            ) : (
+              <>
+                <span>{isRegister ? 'Criar Conta' : 'Entrar na Conta'}</span>
+                <ArrowRight className="w-4 h-4" />
+              </>
+            )}
           </button>
         </form>
 
@@ -138,8 +167,11 @@ export const AuthModal: React.FC = () => {
         <div className="mt-6 text-center text-xs text-gray-400">
           {isRegister ? 'Já possui uma conta?' : 'Ainda não tem conta?'}
           <button
-            onClick={() => setIsRegister(!isRegister)}
-            className="ml-1 text-[#FF6584] font-bold hover:underline"
+            onClick={() => {
+              setIsRegister(!isRegister);
+              setErrorMsg(null);
+            }}
+            className="ml-1 text-[#FF6584] font-bold hover:underline cursor-pointer"
           >
             {isRegister ? 'Fazer Login' : 'Cadastre-se'}
           </button>
