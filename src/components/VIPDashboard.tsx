@@ -25,7 +25,7 @@ import { useAuth } from '../context/AuthContext';
 import { buildExtensionZip } from '../utils/extensionZipBuilder';
 
 export const VIPDashboard: React.FC = () => {
-  const { user } = useAuth();
+  const { user, openCheckoutModal } = useAuth();
   const [activeTab, setActiveTab] = useState<'download' | 'agents' | 'tutorial' | 'prompts' | 'hacks' | 'support'>('download');
   const [browserTab, setBrowserTab] = useState<'chrome' | 'edge' | 'brave'>('chrome');
   const [copiedKey, setCopiedKey] = useState(false);
@@ -34,6 +34,10 @@ export const VIPDashboard: React.FC = () => {
   const [copiedAgentId, setCopiedAgentId] = useState<string | null>(null);
 
   const handleDownload = async () => {
+    if (!user?.hasPurchased && user?.role !== 'admin') {
+      openCheckoutModal();
+      return;
+    }
     try {
       setIsDownloading(true);
       const zipBlob = await buildExtensionZip();
@@ -155,6 +159,59 @@ Seções:
     setCopiedPromptIndex(index);
     setTimeout(() => setCopiedPromptIndex(null), 2000);
   };
+
+  if (!user?.hasPurchased && user?.role !== 'admin') {
+    return (
+      <div className="min-h-screen pt-28 pb-20 bg-[#08090B] text-gray-200 flex items-center justify-center px-4">
+        <div className="max-w-xl w-full p-8 sm:p-10 rounded-3xl bg-[#121318] border border-[#FF3366]/40 glass-card shadow-2xl text-center space-y-6 relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-[#FF3366]/10 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none"></div>
+
+          <div className="w-16 h-16 rounded-2xl bg-[#FF3366]/15 border border-[#FF3366]/40 text-[#FF6584] mx-auto flex items-center justify-center">
+            <ShieldAlert className="w-8 h-8" />
+          </div>
+
+          <div className="space-y-2">
+            <span className="px-3 py-1 bg-amber-500/15 border border-amber-500/30 text-amber-400 text-xs font-bold rounded-full uppercase tracking-wider">
+              Acesso Restrito • Pagamento Pendente
+            </span>
+            <h2 className="text-2xl sm:text-3xl font-black text-white">
+              Libere o Acesso VIP à Extensão Lovable Pro
+            </h2>
+            <p className="text-sm text-gray-300">
+              Para ter acesso ilimitado ao download da extensão (.zip), aos **20 Agentes IA** e tutoriais VIP, conclua o pagamento de **R$ 10,00 (Taxa Única via PIX)**.
+            </p>
+          </div>
+
+          <div className="p-4 rounded-2xl bg-[#08090B] border border-white/10 text-left space-y-2">
+            <div className="flex items-center gap-2 text-xs font-bold text-gray-200">
+              <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+              <span>Extensão Lovable Pro v2.4 (.ZIP para Chrome, Edge e Brave)</span>
+            </div>
+            <div className="flex items-center gap-2 text-xs font-bold text-gray-200">
+              <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+              <span>20 Agentes IA Especializados & 37 Skills Prontas</span>
+            </div>
+            <div className="flex items-center gap-2 text-xs font-bold text-gray-200">
+              <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+              <span>Vídeo Tutoriais & Hacks de Instalação</span>
+            </div>
+          </div>
+
+          <button
+            onClick={openCheckoutModal}
+            className="w-full py-4 bg-gradient-to-r from-[#FF3366] via-[#E11D48] to-violet-600 hover:from-[#FF2A5C] hover:to-violet-500 text-white font-black text-base rounded-2xl shadow-xl shadow-[#FF3366]/30 hover:scale-[1.02] transition-all cursor-pointer flex items-center justify-center gap-3"
+          >
+            <Zap className="w-5 h-5 fill-white" />
+            <span>Desbloquear Acesso VIP por R$ 10,00</span>
+          </button>
+
+          <p className="text-xs text-gray-400">
+            Pagamento único e vitalício via PIX com liberação instantânea.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen pt-24 pb-20 bg-[#08090B] text-gray-200">
