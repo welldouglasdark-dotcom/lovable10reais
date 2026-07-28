@@ -3,7 +3,7 @@ import JSZip from 'jszip';
 export const buildExtensionZip = async (): Promise<Blob> => {
   const zip = new JSZip();
 
-  // 1. Manifest.json
+  // 1. Manifest.json (v3)
   const manifestContent = JSON.stringify(
     {
       manifest_version: 3,
@@ -48,7 +48,7 @@ export const buildExtensionZip = async (): Promise<Blob> => {
     2
   );
 
-  // 2. Popup HTML
+  // 2. Popup HTML (Novo Design Lovable 10 Reais)
   const popupHtmlCode = `<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -93,7 +93,7 @@ export const buildExtensionZip = async (): Promise<Blob> => {
             <div class="input-wrapper">
                 <textarea 
                     id="messageInput" 
-                    placeholder="Digite sua instrução para o Lovable..."
+                    placeholder="Digite sua mensagem para o Lovable.dev..."
                     rows="3"
                 ></textarea>
                 <div class="button-group">
@@ -122,7 +122,7 @@ export const buildExtensionZip = async (): Promise<Blob> => {
 </body>
 </html>`;
 
-  // 3. Popup CSS (Dark Mode Theme #08090B + Pink/Violet #FF3366)
+  // 3. Popup CSS (Dark Mode #08090B + Pink/Violet #FF3366)
   const popupCssCode = `* { margin: 0; padding: 0; box-sizing: border-box; }
 body { width: 400px; height: 600px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #08090B; color: #F3F4F6; overflow: hidden; }
 .container { display: flex; flex-direction: column; height: 100%; background: #08090B; }
@@ -170,43 +170,56 @@ button:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
 .status-bar.error { color: #EF4444; background: rgba(239, 68, 68, 0.1); }
 .status-bar.success { color: #10B981; background: rgba(16, 185, 129, 0.1); }`;
 
-  // 4. Background service worker
-  const backgroundJsCode = `chrome.runtime.onInstalled.addListener(() => {
+  // 4. Background service worker (Original do Lovable Chat)
+  const backgroundJsCode = `// Background service worker
+chrome.runtime.onInstalled.addListener(() => {
     console.log('Lovable Chat Extension installed');
 });
+
+// Listen for messages from popup
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === 'getCookies') {
-        chrome.cookies.getAll({ domain: 'lovable.dev' }, (cookies) => {
+        chrome.cookies.getAll({
+            domain: 'lovable.dev'
+        }, (cookies) => {
             sendResponse({ cookies: cookies });
         });
-        return true;
+        return true; // Keep the message channel open
     }
+    
     if (request.action === 'uploadToStorage') {
+        // Handle storage upload in background to avoid CORS
         handleStorageUpload(request.data)
             .then(result => sendResponse({ success: true, data: result }))
             .catch(error => sendResponse({ success: false, error: error.message }));
-        return true;
+        return true; // Keep the message channel open
     }
 });
+
 async function handleStorageUpload(data) {
-    const { url, headers, body } = data;
+    const { url, headers, body, fileId } = data;
+    
     try {
+        // Converter ArrayBuffer de volta para poder enviar
         const response = await fetch(url, {
             method: 'PUT',
             headers: headers,
             body: new Uint8Array(body)
         });
+        
         if (!response.ok) {
             throw new Error(\`Upload failed: \${response.status}\`);
         }
+        
         return { status: response.status };
     } catch (error) {
         throw error;
     }
 }`;
 
-  // 5. Read popup.js logic
-  const popupJsCode = `function generateRandomId(length = 10) {
+  // 5. Original Full Popup JS Logic from lovable-chat-extension/popup.js
+  const popupJsCode = `// Utility functions - usando Web Crypto API nativa do navegador
+function generateRandomId(length = 10) {
     const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
     let result = '';
     for (let i = 0; i < length; i++) {
@@ -214,18 +227,22 @@ async function handleStorageUpload(data) {
     }
     return result;
 }
+
 function timeSortableId() {
     const random = generateRandomHex(3);
     return \`\${random}\`;
 }
+
 function randomFourId() {
     return generateRandomHex(2);
 }
+
 function generateRandomHex(bytes) {
     const array = new Uint8Array(bytes);
     crypto.getRandomValues(array);
     return Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('');
 }
+
 function generateMessageId() {
     const r = timeSortableId();
     const r2 = randomFourId();
@@ -234,6 +251,7 @@ function generateMessageId() {
         aiMessageId: \`aimsg_01ktevtpvh\${r}7n2rj62vz7\`
     };
 }
+
 class ChatState {
     constructor() {
         this.messages = [];
@@ -243,6 +261,7 @@ class ChatState {
         this.cookieString = null;
         this.browserSessionId = null;
     }
+
     addMessage(type, content, files = []) {
         const message = {
             id: Date.now().toString(),
@@ -255,7 +274,9 @@ class ChatState {
         return message;
     }
 }
+
 const state = new ChatState();
+
 const chatContainer = document.getElementById('chatContainer');
 const messagesContainer = document.getElementById('messages');
 const messageInput = document.getElementById('messageInput');
@@ -268,25 +289,317 @@ const projectIdElement = document.getElementById('projectId');
 
 async function initialize() {
     try {
-        if (statusBar) statusBar.textContent = 'Inicializando...';
+        statusBar.textContent = 'Inicializando...';
         const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+        
         if (!tab || !tab.url || !tab.url.includes('lovable.dev')) {
             throw new Error('Abra a extensão em uma página do Lovable.dev');
         }
+
         const urlParts = tab.url.split('/');
         state.projectId = urlParts[urlParts.length - 1].split('?')[0];
-        if (projectIdElement) projectIdElement.textContent = \`Projeto: \${state.projectId}\`;
-        if (statusBar) {
-            statusBar.textContent = 'Pronto para usar • Lovable PRO (R$ 10)';
-            statusBar.classList.remove('error');
+        projectIdElement.textContent = \`Projeto: \${state.projectId}\`;
+
+        await getAuthData(tab.url);
+        
+        statusBar.textContent = 'Pronto para usar';
+        statusBar.classList.remove('error');
+    } catch (error) {
+        statusBar.textContent = error.message;
+        statusBar.classList.add('error');
+        console.error('Initialization error:', error);
+    }
+}
+
+async function getAuthData(url) {
+    try {
+        const cookies = await chrome.cookies.getAll({ domain: 'lovable.dev' });
+        
+        if (cookies.length === 0) {
+            const allCookies = await chrome.cookies.getAll({});
+            const lovableCookies = allCookies.filter(c => c.domain.includes('lovable.dev'));
+            
+            if (lovableCookies.length === 0) {
+                throw new Error('Cookies não encontrados. Faça login no Lovable.dev primeiro.');
+            }
+            
+            const sessionCookie = lovableCookies.find(c => c.name === 'lovable-session-id-v2' || c.name.includes('session'));
+            if (!sessionCookie) throw new Error('Token de sessão não encontrado. Faça login novamente.');
+            
+            state.token = sessionCookie.value;
+            state.cookieString = lovableCookies.map(c => \`\${c.name}=\${c.value}\`).join('; ');
+            const browserSessionCookie = lovableCookies.find(c => c.name === 'x-browser-session-id');
+            state.browserSessionId = browserSessionCookie?.value || \`bsess_\${generateRandomId(26)}\`;
+        } else {
+            const sessionCookie = cookies.find(c => c.name === 'lovable-session-id-v2' || c.name.includes('session') || c.name === 'sb-access-token');
+            if (!sessionCookie) throw new Error('Token de sessão não encontrado.');
+            
+            state.token = sessionCookie.value;
+            state.cookieString = cookies.map(c => \`\${c.name}=\${c.value}\`).join('; ');
+            state.browserSessionId = \`bsess_\${generateRandomId(26)}\`;
         }
     } catch (error) {
-        if (statusBar) {
-            statusBar.textContent = error.message;
-            statusBar.classList.add('error');
+        throw new Error(\`Erro de autenticação: \${error.message}\`);
+    }
+}
+
+class FileAttachment {
+    constructor(file) {
+        this.id = Date.now().toString() + Math.random().toString(36).substr(2, 9);
+        this.file = file;
+        this.preview = '';
+        this.url = '';
+        this.file_id = '';
+        this.file_name = file.name;
+        this.uploading = false;
+        this.isImage = file.type.startsWith('image/');
+    }
+
+    async generatePreview() {
+        if (this.isImage) {
+            return new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    this.preview = e.target.result;
+                    resolve();
+                };
+                reader.readAsDataURL(this.file);
+            });
+        }
+    }
+
+    async upload(state) {
+        try {
+            this.uploading = true;
+            updateFilePreviewStatus(this.id, 'uploading');
+            
+            const uploadUrlResponse = await fetch(\`https://api.lovable.dev/projects/\${state.projectId}/files/generate-upload-url\`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': \`Bearer \${state.token}\`,
+                    'Origin': 'https://lovable.dev',
+                    'Referer': 'https://lovable.dev/',
+                    'Cookie': state.cookieString
+                },
+                body: JSON.stringify({
+                    original_file_name: this.file.name,
+                    content_type: this.file.type,
+                    file_size_bytes: this.file.size,
+                    original_file_size_bytes: this.file.size
+                })
+            });
+
+            if (!uploadUrlResponse.ok) throw new Error('Falha ao gerar URL de upload');
+            const uploadData = await uploadUrlResponse.json();
+            
+            const fileBuffer = await this.file.arrayBuffer();
+            const uploadResponse = await fetch(uploadData.url, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': this.file.type,
+                    'x-goog-content-length-range': uploadData.headers['x-goog-content-length-range'],
+                    'x-goog-meta-user_id': uploadData.headers['x-goog-meta-user_id']
+                },
+                body: fileBuffer
+            });
+
+            const dir_name = uploadData.file_id.split('/')[0];
+            const file_name = uploadData.file_id.split('/')[1];
+
+            const downloadUrlResponse = await fetch('https://api.lovable.dev/files/generate-download-url', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': \`Bearer \${state.token}\`,
+                    'Cookie': state.cookieString
+                },
+                body: JSON.stringify({ dir_name, file_name })
+            });
+
+            if (!downloadUrlResponse.ok) throw new Error('Falha ao gerar URL de download');
+            const downloadData = await downloadUrlResponse.json();
+            
+            this.url = downloadData.url;
+            this.file_id = uploadData.file_id;
+            this.uploading = false;
+            updateFilePreviewStatus(this.id, 'complete');
+            return true;
+        } catch (error) {
+            this.uploading = false;
+            updateFilePreviewStatus(this.id, 'error');
+            throw error;
         }
     }
 }
+
+function updateFilePreviewStatus(fileId, status) {
+    const previewItems = filePreview.querySelectorAll('.preview-item');
+    previewItems.forEach(item => {
+        const progressDiv = item.querySelector('.upload-progress');
+        if (progressDiv && item.querySelector(\`[onclick*="\${fileId}"]\`)) {
+            switch(status) {
+                case 'uploading': progressDiv.textContent = '⏳ Upload...'; break;
+                case 'complete': progressDiv.textContent = '✅'; break;
+                case 'error': progressDiv.textContent = '❌'; break;
+            }
+        }
+    });
+}
+
+attachButton.addEventListener('click', () => fileInput.click());
+
+fileInput.addEventListener('change', async (e) => {
+    const files = Array.from(e.target.files);
+    for (const file of files) {
+        const attachment = new FileAttachment(file);
+        await attachment.generatePreview();
+        state.files.push(attachment);
+        renderFilePreviews();
+        try {
+            await attachment.upload(state);
+            renderFilePreviews();
+        } catch (error) {
+            statusBar.textContent = \`Erro no upload: \${error.message}\`;
+            statusBar.classList.add('error');
+        }
+    }
+    fileInput.value = '';
+});
+
+function renderFilePreviews() {
+    if (state.files.length === 0) {
+        filePreview.style.display = 'none';
+        return;
+    }
+    filePreview.style.display = 'flex';
+    filePreview.innerHTML = state.files.map(file => \`
+        <div class="preview-item">
+            \${file.isImage ? \`<img src="\${file.preview}" alt="\${file.file_name}">\` : \`<div class="file-icon">📄</div>\`}
+            \${file.uploading ? '<div class="upload-progress">⏳ Upload...</div>' : file.url ? '<div class="upload-progress">✅</div>' : '<div class="upload-progress">⏳ Aguardando...</div>'}
+            <div style="font-size: 10px; max-width: 60px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                \${file.file_name}
+            </div>
+            <button class="remove-file" onclick="window.removeFile('\${file.id}')">×</button>
+        </div>
+    \`).join('');
+}
+
+window.removeFile = function(fileId) {
+    state.files = state.files.filter(f => f.id !== fileId);
+    renderFilePreviews();
+};
+
+async function sendMessage() {
+    const message = messageInput.value.trim();
+    if (!message && state.files.length === 0) return;
+    if (!state.projectId || !state.token) {
+        statusBar.textContent = 'Erro: Projeto ou autenticação não configurados';
+        statusBar.classList.add('error');
+        return;
+    }
+
+    try {
+        messageInput.disabled = true;
+        sendButton.disabled = true;
+        statusBar.textContent = 'Enviando...';
+        statusBar.classList.remove('error', 'success');
+
+        const ids = generateMessageId();
+        let messageBody = {
+            id: ids.userMessageId,
+            message: message,
+            files: [],
+            selected_elements: [],
+            chat_only: false,
+            optimisticImageUrls: [],
+            intent: "prompt",
+            ai_message_id: ids.aiMessageId,
+            thread_id: "main",
+            current_page: "/",
+            current_viewport_width: 1465,
+            current_viewport_height: 408,
+            current_viewport_dpr: 1,
+            view: "preview",
+            view_description: "The user is currently viewing the preview."
+        };
+
+        if (state.files.length > 0) {
+            messageBody.files = state.files.map(file => ({
+                file_id: file.file_id,
+                file_name: file.file_name,
+                url: file.url
+            }));
+            messageBody.optimisticImageUrls = state.files.filter(f => f.url).map(f => f.url);
+        }
+
+        state.addMessage('user', message || '[Arquivos anexados]', state.files.map(f => ({ name: f.file_name, url: f.url })));
+        renderMessages();
+
+        const response = await fetch(\`https://api.lovable.dev/projects/\${state.projectId}/chat\`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': \`Bearer \${state.token}\`,
+                'Cookie': state.cookieString,
+                'Origin': 'https://lovable.dev',
+                'Referer': 'https://lovable.dev/'
+            },
+            body: JSON.stringify(messageBody)
+        });
+
+        const responseText = await response.text();
+        let responseData;
+        try { responseData = JSON.parse(responseText); } catch (e) { responseData = { message: responseText }; }
+
+        if (!response.ok) {
+            throw new Error(responseData.error?.message || responseData.message || \`Erro \${response.status}\`);
+        }
+
+        state.addMessage('agent', '✅ Mensagem enviada com sucesso para o Lovable.dev!');
+        statusBar.textContent = 'Mensagem enviada com sucesso';
+        statusBar.classList.add('success');
+        messageInput.value = '';
+        state.files = [];
+        renderFilePreviews();
+    } catch (error) {
+        let errorMessage = error.message;
+        if (errorMessage.includes('Workspace out of credits') || errorMessage.includes('credits')) {
+            errorMessage = 'Créditos esgotados na sua conta do Lovable.dev! Adicione mais créditos no site Lovable.dev.';
+        }
+        state.addMessage('agent', \`❌ Erro: \${errorMessage}\`);
+        statusBar.textContent = \`Erro: \${errorMessage}\`;
+        statusBar.classList.add('error');
+    } finally {
+        messageInput.disabled = false;
+        sendButton.disabled = false;
+        messageInput.focus();
+        renderMessages();
+    }
+}
+
+function renderMessages() {
+    messagesContainer.innerHTML = state.messages.map(msg => \`
+        <div class="message \${msg.type}">
+            <div class="message-content">
+                \${msg.content}
+            </div>
+            <div class="message-time">
+                \${new Date(msg.timestamp).toLocaleTimeString()}
+            </div>
+        </div>
+    \`).join('');
+    chatContainer.scrollTop = chatContainer.scrollHeight;
+}
+
+sendButton.addEventListener('click', sendMessage);
+messageInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendMessage();
+    }
+});
+
 document.addEventListener('DOMContentLoaded', initialize);
 `;
 
