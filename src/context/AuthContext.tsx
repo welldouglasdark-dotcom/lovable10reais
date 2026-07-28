@@ -50,7 +50,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Sync user profile from Supabase including role
   const syncUserProfile = async (sbUser: SupabaseUser) => {
     try {
-      const isWellingtonAdmin = sbUser.email?.toLowerCase().includes('wellington');
+      const isWellingtonAdmin = sbUser.email?.toLowerCase().includes('wellington') || sbUser.email?.toLowerCase().includes('welldouglasbox');
 
       const { data: profile } = await supabase
         .from('profiles')
@@ -116,7 +116,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return fullUser;
     } catch (e) {
       console.error('Error syncing Supabase user profile:', e);
-      const isWellingtonAdmin = sbUser.email?.toLowerCase().includes('wellington');
+      const isWellingtonAdmin = sbUser.email?.toLowerCase().includes('wellington') || sbUser.email?.toLowerCase().includes('welldouglasbox');
       const fallbackUser: User = {
         id: sbUser.id,
         name: sbUser.user_metadata?.name || sbUser.email?.split('@')[0] || 'Dev Master',
