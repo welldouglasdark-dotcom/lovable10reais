@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Lovable Chat Assistant",
-  "version": "1.0.0",
-  "description": "Chat extension for Lovable.dev projects",
+  "name": "Lovable Pro Chat Assistant - 10 Reais",
+  "version": "2.4.0",
+  "description": "Assistente oficial Lovable Pro com 20 Agentes Especialistas de IA, upload de arquivos e automação inteligente para Lovable.dev.",
   "permissions": [
     "activeTab",
     "cookies",
