@@ -1,0 +1,127 @@
+@import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Inter:wght@300;400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap');
+@import "tailwindcss";
+
+:root {
+  font-family: 'Plus Jakarta Sans', 'Inter', system-ui, -apple-system, sans-serif;
+  color-scheme: dark;
+  --bg-dark: #08090B;
+  --bg-card: rgba(18, 19, 22, 0.85);
+  --lovable-pink: #FF3366;
+  --lovable-rose: #FF007F;
+  --lovable-purple: #8B5CF6;
+  --border-glow: rgba(255, 51, 102, 0.35);
+}
+
+body {
+  background-color: var(--bg-dark);
+  color: #F3F4F6;
+  overflow-x: hidden;
+  margin: 0;
+  padding: 0;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #08090B;
+}
+::-webkit-scrollbar-thumb {
+  background: #1C1E24;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #2D3039;
+}
+
+/* Glassmorphism utility - Lovable Style */
+.glass-card {
+  background: rgba(18, 20, 26, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 10px 40px 0 rgba(0, 0, 0, 0.5);
+}
+
+.glass-card-hover {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.glass-card-hover:hover {
+  border-color: rgba(255, 51, 102, 0.45);
+  box-shadow: 0 0 30px rgba(255, 51, 102, 0.25), inset 0 0 20px rgba(255, 51, 102, 0.05);
+  transform: translateY(-3px);
+}
+
+/* Lovable Brand Gradients */
+.text-gradient-lovable {
+  background: linear-gradient(135deg, #FF3366 0%, #FF6584 45%, #C084FC 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.text-gradient-cyan {
+  background: linear-gradient(135deg, #38BDF8 0%, #06B6D4 50%, #3B82F6 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.text-gradient-gold {
+  background: linear-gradient(135deg, #FDE047 0%, #F59E0B 50%, #EF4444 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Lovable Background Orbs */
+.glow-orb-lovable {
+  position: absolute;
+  width: 550px;
+  height: 550px;
+  background: radial-gradient(circle, rgba(255, 51, 102, 0.22) 0%, rgba(255, 51, 102, 0) 70%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.glow-orb-purple {
+  position: absolute;
+  width: 550px;
+  height: 550px;
+  background: radial-gradient(circle, rgba(139, 92, 246, 0.18) 0%, rgba(139, 92, 246, 0) 70%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Lovable Button Shimmer */
+@keyframes shimmer-lovable {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.btn-lovable {
+  background: linear-gradient(135deg, #FF3366 0%, #E11D48 50%, #8B5CF6 100%);
+  background-size: 200% 100%;
+  transition: all 0.3s ease;
+}
+
+.btn-lovable:hover {
+  box-shadow: 0 0 30px rgba(255, 51, 102, 0.5);
+}
+
+/* Pulse Glow Lovable */
+@keyframes pulse-glow-lovable {
+  0%, 100% {
+    box-shadow: 0 0 15px rgba(255, 51, 102, 0.4), 0 0 30px rgba(139, 92, 246, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 30px rgba(255, 51, 102, 0.8), 0 0 50px rgba(139, 92, 246, 0.5);
+  }
+}
+
+.pulse-glow-lovable {
+  animation: pulse-glow-lovable 2.5s infinite ease-in-out;
+}
+
+.font-mono-code {
+  font-family: 'Fira Code', monospace;
+}
