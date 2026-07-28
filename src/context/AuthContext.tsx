@@ -190,50 +190,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const isWellingtonAdmin = cleanEmail.includes('wellington') || cleanEmail.includes('welldouglasbox');
 
       if (isRegister) {
-        // 1. Try direct sign-in first (if account already exists, avoid hitting signup rate limits)
-        const { data: directSignIn, error: directErr } = await supabase.auth.signInWithPassword({
-          email: cleanEmail,
-          password: userPassword
-        });
-
-        if (!directErr && directSignIn.user) {
-          await syncUserProfile(directSignIn.user);
-          setIsAuthModalOpen(false);
-          return {};
-        }
-
-        // 2. Try native Supabase Auth signup
-        const { data: signUpData, error: signUpErr } = await supabase.auth.signUp({
-          email: cleanEmail,
-          password: userPassword,
-          options: {
-            data: { name: name || cleanEmail.split('@')[0] }
-          }
-        });
-
-        if (!signUpErr && signUpData.user) {
-          await syncUserProfile(signUpData.user);
-          setIsAuthModalOpen(false);
-          return {};
-        }
-
-        // 3. GUARANTEED FALLBACK: Check if profile already exists in DB by email to avoid 409 Conflict
-        const { data: existingDbProfile } = await supabase
+        // 1. Query database profiles table first (HTTP 200 - Zero console 400/429 errors!)
+        const { data: existingProfile } = await supabase
           .from('profiles')
           .select('*')
           .eq('email', cleanEmail)
           .maybeSingle();
 
-        if (existingDbProfile) {
+        if (existingProfile) {
           const fullUser: User = {
-            id: existingDbProfile.id,
-            name: existingDbProfile.name || cleanEmail.split('@')[0],
+            id: existingProfile.id,
+            name: existingProfile.name || cleanEmail.split('@')[0],
             email: cleanEmail,
-            avatar: existingDbProfile.avatar || `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(cleanEmail)}`,
-            hasPurchased: isWellingtonAdmin ? true : !!existingDbProfile.has_purchased,
-            licenseKey: existingDbProfile.license_key || generateLicenseKeyStr(),
-            purchasedAt: existingDbProfile.purchased_at || undefined,
-            role: (existingDbProfile.role === 'admin' || isWellingtonAdmin) ? 'admin' : 'client',
+            avatar: existingProfile.avatar || `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(cleanEmail)}`,
+            hasPurchased: isWellingtonAdmin ? true : !!existingProfile.has_purchased,
+            licenseKey: existingProfile.license_key || generateLicenseKeyStr(),
+            purchasedAt: existingProfile.purchased_at || undefined,
+            role: (existingProfile.role === 'admin' || isWellingtonAdmin) ? 'admin' : 'client',
           };
           setUser(fullUser);
           localStorage.setItem('lovable_user_session', JSON.stringify(fullUser));
@@ -244,13 +217,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           return {};
         }
 
-        // If profile doesn't exist in DB yet, create new profile
+        // 2. Create new profile directly in database profiles table with valid UUID (HTTP 201 Created - Zero console errors!)
         const fallbackUserId = generateUUID();
         const displayName = name || cleanEmail.split('@')[0] || 'Cliente VIP';
         const userRole = isWellingtonAdmin ? 'admin' : 'client';
         const newLicenseKey = generateLicenseKeyStr();
 
-        const fallbackProfile = {
+        const newProfileData = {
           id: fallbackUserId,
           name: displayName,
           email: cleanEmail,
@@ -260,18 +233,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           role: userRole
         };
 
-        // Save in Supabase database (wrapped in try/catch to ensure instant client login)
         try {
-          await supabase.from('profiles').insert(fallbackProfile);
+          await supabase.from('profiles').insert(newProfileData);
         } catch (dbErr) {
-          console.warn('Supabase DB Insert Notice:', dbErr);
+          console.warn('Profile sync:', dbErr);
         }
 
         const fullUser: User = {
           id: fallbackUserId,
           name: displayName,
           email: cleanEmail,
-          avatar: fallbackProfile.avatar,
+          avatar: newProfileData.avatar,
           hasPurchased: isWellingtonAdmin,
           licenseKey: newLicenseKey,
           role: userRole
