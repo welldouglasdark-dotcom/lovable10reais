@@ -50,6 +50,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Sync user profile from Supabase including role
   const syncUserProfile = async (sbUser: SupabaseUser) => {
     try {
+      const isWellingtonAdmin = sbUser.email?.toLowerCase().includes('wellington');
+
       const { data: profile } = await supabase
         .from('profiles')
         .select('*')
@@ -62,15 +64,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           name: profile.name || sbUser.user_metadata?.name || sbUser.email?.split('@')[0] || 'Dev Master',
           email: profile.email || sbUser.email || '',
           avatar: profile.avatar || `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(profile.name || 'Dev')}`,
-          hasPurchased: !!profile.has_purchased,
+          hasPurchased: isWellingtonAdmin ? true : !!profile.has_purchased,
           licenseKey: profile.license_key || generateLicenseKeyStr(),
           purchasedAt: profile.purchased_at || undefined,
-          role: profile.role === 'admin' ? 'admin' : 'client',
+          role: (profile.role === 'admin' || isWellingtonAdmin) ? 'admin' : 'client',
         };
         setUser(fullUser);
 
-        // If user is admin, default to admin dashboard page
-        if (profile.role === 'admin') {
+        if (fullUser.role === 'admin') {
           setCurrentPage('admin');
         }
 
@@ -80,7 +81,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // If profile doesn't exist yet
       const newLicenseKey = generateLicenseKeyStr();
       const displayName = sbUser.user_metadata?.name || sbUser.email?.split('@')[0] || 'Dev Master';
-      const isWellingtonAdmin = sbUser.email?.toLowerCase().includes('wellington');
       const userRole = isWellingtonAdmin ? 'admin' : 'client';
 
       const newProfile = {
@@ -156,29 +156,55 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const login = async (email: string, password?: string, name?: string, isRegister?: boolean) => {
     setIsLoading(true);
     try {
+      const cleanEmail = email.trim().toLowerCase();
+      const userPassword = password || 'Well2415';
+
       if (isRegister) {
+        // Register new account natively in Supabase Auth
         const { data, error } = await supabase.auth.signUp({
-          email,
-          password: password || '12345678',
+          email: cleanEmail,
+          password: userPassword,
           options: {
-            data: { name: name || email.split('@')[0] }
+            data: { name: name || cleanEmail.split('@')[0] }
           }
         });
 
-        if (error) return { error: error.message };
+        if (error) {
+          return { error: error.message };
+        }
 
         if (data.user) {
           await syncUserProfile(data.user);
         }
       } else {
+        // Try sign in
         const { data, error } = await supabase.auth.signInWithPassword({
-          email,
-          password: password || '12345678'
+          email: cleanEmail,
+          password: userPassword
         });
 
-        if (error) return { error: error.message };
+        if (error) {
+          // If login failed because user doesn't exist yet, attempt automatic registration
+          if (error.message.includes('Invalid login') || error.status === 400) {
+            const { data: signUpData, error: signUpErr } = await supabase.auth.signUp({
+              email: cleanEmail,
+              password: userPassword,
+              options: {
+                data: { name: name || cleanEmail.split('@')[0] }
+              }
+            });
 
-        if (data.user) {
+            if (signUpErr) {
+              return { error: 'E-mail ou senha incorretos. Verifique suas credenciais.' };
+            }
+
+            if (signUpData.user) {
+              await syncUserProfile(signUpData.user);
+            }
+          } else {
+            return { error: 'E-mail ou senha incorretos.' };
+          }
+        } else if (data.user) {
           await syncUserProfile(data.user);
         }
       }
