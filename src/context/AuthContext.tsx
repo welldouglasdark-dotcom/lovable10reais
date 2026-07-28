@@ -260,8 +260,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           role: userRole
         };
 
-        // Save in Supabase database with onConflict email handler
-        await supabase.from('profiles').upsert(fallbackProfile, { onConflict: 'email' });
+        // Save in Supabase database
+        await supabase.from('profiles').insert(fallbackProfile);
 
         const fullUser: User = {
           id: fallbackUserId,
