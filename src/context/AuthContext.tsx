@@ -162,6 +162,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   useEffect(() => {
+    // Check if returning from OAuth redirect with token/code
+    const checkOAuthSession = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
+          await syncUserProfile(session.user);
+          setIsLoading(false);
+          return;
+        }
+      } catch (e) {
+        console.warn('OAuth session check:', e);
+      }
+    };
+
     // Restore local session first for instant responsiveness
     const savedSession = localStorage.getItem('lovable_user_session');
     if (savedSession) {
@@ -171,6 +185,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setUser(parsed);
           if (parsed.role === 'admin') {
             setCurrentPage('admin');
+          } else if (parsed.hasPurchased) {
+            setCurrentPage('vip');
           }
         }
       } catch (e) {
@@ -178,14 +194,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     }
 
-    const { data: authListener } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      if (session?.user) {
-        await syncUserProfile(session.user);
-      }
-      setIsLoading(false);
-    });
+    checkOAuthSession();
 
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
+    const { data: authListener } = supabase.auth.onAuthStateChange(async (_event, session) => {
       if (session?.user) {
         await syncUserProfile(session.user);
       }
