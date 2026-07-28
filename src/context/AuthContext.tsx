@@ -160,7 +160,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const userPassword = password || 'Well2415';
 
       if (isRegister) {
-        // Register new account natively in Supabase Auth
+        // Try sign in first (avoids hitting signup rate limits if account already exists)
+        const { data: directSignIn, error: directErr } = await supabase.auth.signInWithPassword({
+          email: cleanEmail,
+          password: userPassword
+        });
+
+        if (!directErr && directSignIn.user) {
+          await syncUserProfile(directSignIn.user);
+          setIsAuthModalOpen(false);
+          return {};
+        }
+
+        // Register new account in Supabase Auth
         const { data, error } = await supabase.auth.signUp({
           email: cleanEmail,
           password: userPassword,
@@ -170,18 +182,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         });
 
         if (error) {
-          // If rate limit error occurs, attempt direct sign in in case user already exists
           if (error.message.includes('rate limit') || error.message.includes('limit exceeded') || error.status === 429) {
-            const { data: signInData, error: signInErr } = await supabase.auth.signInWithPassword({
-              email: cleanEmail,
-              password: userPassword
-            });
-            if (!signInErr && signInData.user) {
-              await syncUserProfile(signInData.user);
-              setIsAuthModalOpen(false);
-              return {};
-            }
-            return { error: 'Limite de envios de e-mail excedido no Supabase. Se você já se cadastrou, clique em "Fazer Login" abaixo.' };
+            return { error: 'O Supabase limitou temporariamente o envio de e-mails de cadastro (Erro 429). Se você já se cadastrou, clique em "Fazer Login" abaixo.' };
           }
           return { error: error.message };
         }
