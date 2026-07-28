@@ -260,8 +260,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           role: userRole
         };
 
-        // Save in Supabase database
-        await supabase.from('profiles').insert(fallbackProfile);
+        // Save in Supabase database (wrapped in try/catch to ensure instant client login)
+        try {
+          await supabase.from('profiles').insert(fallbackProfile);
+        } catch (dbErr) {
+          console.warn('Supabase DB Insert Notice:', dbErr);
+        }
 
         const fullUser: User = {
           id: fallbackUserId,
