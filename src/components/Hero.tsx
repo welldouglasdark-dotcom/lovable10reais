@@ -1,7 +1,6 @@
 import React from 'react';
 import { Sparkles, ShieldCheck, ArrowRight, Star, CheckCircle, Clock, Gift, Heart } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { ExtensionSimulator } from './ExtensionSimulator';
 
 export const Hero: React.FC = () => {
   const { openCheckoutModal } = useAuth();
@@ -88,19 +87,6 @@ export const Hero: React.FC = () => {
               </div>
             </div>
           </div>
-        </div>
-
-        {/* Live Interactive Extension Simulator */}
-        <div className="mt-14 max-w-5xl mx-auto">
-          <div className="text-center mb-6">
-            <h3 className="text-lg font-bold text-gray-200">
-              ⚡ Veja a Extensão Funcionando no Lovable.dev (Demonstração Interativa)
-            </h3>
-            <p className="text-xs text-gray-400">
-              Clique nos botões do simulador abaixo para testar os recursos antes de adquirir:
-            </p>
-          </div>
-          <ExtensionSimulator />
         </div>
       </div>
     </section>

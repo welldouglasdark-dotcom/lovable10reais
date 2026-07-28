@@ -16,9 +16,9 @@ export const Features: React.FC = () => {
     {
       icon: Zap,
       iconColor: "text-yellow-400",
-      title: "Economizador de Tokens (Até 60%)",
-      badge: "Economia no Lovable",
-      description: "Remove histórico duplicado e otimiza o contexto enviado à IA. Economize seus créditos do Lovable.dev e crie apps maiores pelo mesmo custo."
+      title: "Economia 100% Vitalícia de Tokens",
+      badge: "100% Vitalício",
+      description: "Economia de tokens 100% vitalícia apenas utilizando a extensão comprada. Otimize e crie seus projetos no Lovable.dev sem taxas adicionais."
     },
     {
       icon: Eye,
